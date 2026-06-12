@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TABLERO TIEMPO REAL | DEFINITIVO</title>
+    <title>TABLERO TIEMPO REAL | POLLA 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -17,21 +17,19 @@
     <div class="max-w-4xl mx-auto">
         <header class="mb-10 text-center border-b border-slate-700 pb-6">
             <h1 class="oswald text-4xl text-white uppercase italic tracking-tighter">Centro de <span class="text-blue-500">Resultados</span></h1>
-            <p id="status-text" class="text-[10px] text-slate-500 mt-2 uppercase font-bold tracking-widest text-center">Configuración de Enlace</p>
+            <p id="status-text" class="text-[10px] text-slate-500 mt-2 uppercase font-bold tracking-widest text-center">Cargando datos...</p>
         </header>
 
-        <!-- Configuración Inicial -->
-        <div id="setup" class="card p-8 mb-10 text-center">
-            <h2 class="oswald text-xl text-white mb-4 uppercase italic">Conectar con Google Sheets</h2>
-            <p class="text-slate-400 text-sm mb-6">Pega aquí tu enlace de publicación CSV:</p>
-            <input type="text" id="csv-url" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-xs text-blue-400 outline-none focus:border-blue-500 mb-6">
-            <button onclick="saveAndInit()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all uppercase oswald italic text-lg">Activar Tiempo Real</button>
-            <p class="text-[9px] text-slate-500 mt-4 uppercase font-bold">Nota: Asegúrate de que el enlace termine en "output=csv"</p>
+        <div id="loader" class="text-center py-20">
+            <i class="fas fa-sync fa-spin text-3xl text-blue-500"></i>
+            <p class="mt-4 text-slate-500 text-xs uppercase font-bold tracking-widest">Sincronizando con la cancha...</p>
         </div>
 
-        <div id="loader" class="hidden text-center py-20">
-            <i class="fas fa-sync fa-spin text-3xl text-blue-500"></i>
-            <p class="mt-4 text-slate-500 text-xs uppercase font-bold tracking-widest">Sincronizando datos...</p>
+        <div id="error-panel" class="hidden text-center bg-red-900/10 p-8 rounded-2xl border border-red-500/20">
+            <i class="fas fa-exclamation-triangle text-3xl text-red-500 mb-4"></i>
+            <h2 class="text-lg font-bold mb-2">Error de Sincronización</h2>
+            <p class="text-slate-400 text-sm mb-4">No se pudieron cargar los datos.</p>
+            <button onclick="location.reload()" class="bg-slate-800 px-4 py-2 rounded text-[10px] uppercase font-bold">Reintentar</button>
         </div>
 
         <div id="dashboard" class="hidden">
@@ -52,28 +50,17 @@
             </div>
             <h2 class="oswald text-xl uppercase mb-6 text-slate-300 italic border-l-4 border-blue-500 pl-3">Detalle Pronósticos</h2>
             <div id="details" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-            <button onclick="reset()" class="mt-10 text-[9px] text-slate-600 uppercase underline font-bold">Cambiar enlace de datos</button>
         </div>
     </div>
 
     <script>
-        function saveAndInit() {
-            const url = document.getElementById('csv-url').value.trim();
-            if(!url.includes('output=csv')) { alert("El enlace debe terminar en output=csv"); return; }
-            localStorage.setItem('polla_csv_url', url);
-            init(url);
-        }
+        // ENLACE CSV FIJO - No se puede cambiar desde la página
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcgcF0X8JnZxqIxvDv9FHdvo-QVZYm6aX6OZDCzTJ_-jHLeakn8fCQSaDAIAY-_Fk4v9rnHZYAPBxW/pub?output=csv';
 
-        function reset() { localStorage.removeItem('polla_csv_url'); location.reload(); }
-
-        async function init(baseUrl) {
-            document.getElementById('setup').classList.add('hidden');
-            document.getElementById('loader').classList.remove('hidden');
-            document.getElementById('status-text').innerHTML = '<div class="flex items-center justify-center space-x-2"><div class="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div><span>TIEMPO REAL ACTIVO</span></div>';
-            
+        async function init() {
             try {
-                const urlP = baseUrl + "&gid=0";
-                const urlPr = baseUrl + "&gid=18329811";
+                const urlP = CSV_URL + "&gid=0";
+                const urlPr = CSV_URL + "&gid=18329811";
 
                 const [resP, resPr] = await Promise.all([
                     fetch(urlP).then(r => r.text()),
@@ -84,8 +71,8 @@
 
                 process(parseCSV(resP), parseCSV(resPr));
             } catch (e) {
-                alert("Error de conexión. El navegador está bloqueando el acceso. \n\nSolución: Abre este archivo con Firefox o considera subirlo a un sitio web (hosting).");
-                reset();
+                document.getElementById('loader').classList.add('hidden');
+                document.getElementById('error-panel').classList.remove('hidden');
             }
         }
 
@@ -106,6 +93,13 @@
             const pR = pA > pB ? 'A' : (pA < pB ? 'B' : 'E');
             const rR = rA > rB ? 'A' : (rA < rB ? 'B' : 'E');
             return pR === rR ? 1 : 0;
+        }
+
+        function getMedal(index) {
+            if(index === 0) return '🥇';
+            if(index === 1) return '🥈';
+            if(index === 2) return '🥉';
+            return '';
         }
 
         function process(partidos, pronosticos) {
@@ -129,16 +123,9 @@
             render(Object.values(s).sort((a,b) => b.p - a.p || b.ex - a.ex));
         }
 
-        function getMedal(index) {
-            if(index === 0) return '🥇';
-            if(index === 1) return '🥈';
-            if(index === 2) return '🥉';
-            return '';
-        }
-
         function render(data) {
             document.getElementById('table-body').innerHTML = data.map((p,i) => `
-                <tr class="hover:bg-slate-800/30">
+                <tr class="hover:bg-slate-800/30 transition-colors">
                     <td class="px-4 py-4 font-bold text-slate-500">#${i+1}</td>
                     <td class="px-4 py-4 font-bold text-slate-200 uppercase">${p.n} ${getMedal(i)}</td>
                     <td class="px-4 py-4 text-center font-black text-blue-400 text-lg">${p.p}</td>
@@ -148,7 +135,7 @@
             `).join('');
 
             document.getElementById('podium').innerHTML = data.slice(0,3).map((p,i) => `
-                <div class="card p-5 text-center border-b-4 ${i===0?'border-yellow-500':'border-slate-600'}">
+                <div class="card p-5 text-center border-b-4 ${i===0?'border-yellow-500':'border-slate-600'} shadow-lg">
                     <p class="text-[9px] text-slate-500 uppercase font-bold mb-1">Puesto #${i+1}</p>
                     <h3 class="font-bold text-white uppercase truncate text-xs">${p.n}</h3>
                     <p class="text-3xl font-black mb-2">${getMedal(i)}</p>
@@ -157,26 +144,33 @@
             `).join('');
 
             document.getElementById('details').innerHTML = data.map(p => `
-                <div class="card p-5">
+                <div class="card p-5 shadow-lg">
                     <div class="flex justify-between border-b border-slate-700/50 pb-3 mb-3">
                         <span class="font-bold text-slate-200 text-xs uppercase">${p.n}</span>
                         <span class="text-blue-500 font-bold text-xs">${p.p} PTS</span>
                     </div>
-                    ${p.d.map(m => `
-                        <div class="flex justify-between text-[10px] mb-1">
-                            <span class="text-slate-400 truncate w-32 uppercase">${m.t}</span>
-                            <span class="text-slate-300 font-bold">P:${m.p} R:${m.r} <span class="${m.pts>0?'text-blue-400':''}">+${m.pts}</span></span>
-                        </div>
-                    `).join('')}
+                    <div class="space-y-2">
+                        ${p.d.map(m => `
+                            <div class="flex justify-between text-[10px] items-center">
+                                <span class="text-slate-400 truncate w-32 uppercase font-medium">${m.t}</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-400">P:${m.p}</span>
+                                    <span class="bg-slate-700 px-2 py-0.5 rounded text-white font-bold">R:${m.r}</span>
+                                    <span class="w-5 text-right font-bold ${m.pts === 3 ? 'text-green-500' : (m.pts === 1 ? 'text-blue-500' : 'text-slate-600')}">+${m.pts}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             `).join('');
 
             document.getElementById('loader').classList.add('hidden');
             document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('status-text').innerHTML = '<div class="flex items-center justify-center space-x-2"><div class="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div><span>TIEMPO REAL ACTIVO</span></div>';
         }
 
-        const savedUrl = localStorage.getItem('polla_csv_url');
-        if(savedUrl) init(savedUrl);
+        // Inicia automáticamente sin pedir nada
+        init();
     </script>
 </body>
 </html>

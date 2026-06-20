@@ -116,7 +116,18 @@
                     const pA = pr.golesa; const pB = pr.golesb;
                     const pts = calc(pA, pB, rA, rB);
                     s[u].p += pts; if(pts === 3) s[u].ex++; if(pts === 1) s[u].ac++;
-                    s[u].d.push({ t: `${m.equipoa} vs ${m.equipob}`, p: `${pA}-${pB}`, r: (rA !== "" && !isNaN(parseInt(rA))) ? `${rA}-${rB}` : "-", pts });
+                    
+                    // LÓGICA DE BLOQUEO: Si no hay resultado real (rA está vacío), ocultamos el pronóstico (pA-pB)
+                    const tieneResultado = (rA !== "" && rA !== undefined && !isNaN(parseInt(rA)));
+                    const pronosticoAMostrar = tieneResultado ? `${pA}-${pB}` : "?-?";
+                    const resultadoAMostrar = tieneResultado ? `${rA}-${rB}` : "-";
+
+                    s[u].d.push({ 
+                        t: `${m.equipoa} vs ${m.equipob}`, 
+                        p: pronosticoAMostrar, 
+                        r: resultadoAMostrar, 
+                        pts 
+                    });
                 }
             });
 

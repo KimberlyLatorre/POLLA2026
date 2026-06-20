@@ -48,7 +48,7 @@
                     <tbody id="table-body" class="divide-y divide-slate-700/50"></tbody>
                 </table>
             </div>
-            <h2 class="oswald text-xl uppercase mb-6 text-slate-300 italic border-l-4 border-blue-500 pl-3">Detalle Pronósticos</h2>
+            <h2 class="oswald text-xl uppercase mb-6 text-slate-300 italic border-l-4 border-blue-500 pl-3">Detalle Pronósticos (Solo Partidos Jugados)</h2>
             <div id="details" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
     </div>
@@ -115,19 +115,20 @@
                     const rA = m.golesa; const rB = m.golesb;
                     const pA = pr.golesa; const pB = pr.golesb;
                     const pts = calc(pA, pB, rA, rB);
+                    
+                    // Sumamos puntos siempre (si el partido ya se jugó y tiene resultado)
                     s[u].p += pts; if(pts === 3) s[u].ex++; if(pts === 1) s[u].ac++;
                     
-                    // LÓGICA DE BLOQUEO: Si no hay resultado real (rA está vacío), ocultamos el pronóstico (pA-pB)
+                    // FILTRADO ESTRICTO: Solo agregamos al detalle si el partido TIENE resultado real
                     const tieneResultado = (rA !== "" && rA !== undefined && !isNaN(parseInt(rA)));
-                    const pronosticoAMostrar = tieneResultado ? `${pA}-${pB}` : "?-?";
-                    const resultadoAMostrar = tieneResultado ? `${rA}-${rB}` : "-";
-
-                    s[u].d.push({ 
-                        t: `${m.equipoa} vs ${m.equipob}`, 
-                        p: pronosticoAMostrar, 
-                        r: resultadoAMostrar, 
-                        pts 
-                    });
+                    if (tieneResultado) {
+                        s[u].d.push({ 
+                            t: `${m.equipoa} vs ${m.equipob}`, 
+                            p: `${pA}-${pB}`, 
+                            r: `${rA}-${rB}`, 
+                            pts 
+                        });
+                    }
                 }
             });
 
@@ -161,7 +162,7 @@
                         <span class="text-blue-500 font-bold text-xs">${p.p} PTS</span>
                     </div>
                     <div class="space-y-2">
-                        ${p.d.map(m => `
+                        ${p.d.length > 0 ? p.d.map(m => `
                             <div class="flex justify-between text-[10px] items-center">
                                 <span class="text-slate-400 truncate w-32 uppercase font-medium">${m.t}</span>
                                 <div class="flex items-center gap-2">
@@ -170,7 +171,7 @@
                                     <span class="w-5 text-right font-bold ${m.pts === 3 ? 'text-green-500' : (m.pts === 1 ? 'text-blue-500' : 'text-slate-600')}">+${m.pts}</span>
                                 </div>
                             </div>
-                        `).join('')}
+                        `).join('') : '<p class="text-[10px] text-slate-500 italic">No hay partidos jugados aún.</p>'}
                     </div>
                 </div>
             `).join('');

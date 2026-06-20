@@ -48,27 +48,23 @@
                     <tbody id="table-body" class="divide-y divide-slate-700/50"></tbody>
                 </table>
             </div>
-            <h2 class="oswald text-xl uppercase mb-6 text-slate-300 italic border-l-4 border-blue-500 pl-3">Detalle Pronósticos (Solo Partidos Jugados)</h2>
+            <h2 class="oswald text-xl uppercase mb-6 text-slate-300 italic border-l-4 border-blue-500 pl-3">Detalle Pronósticos (Solo Jugados)</h2>
             <div id="details" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
     </div>
 
     <script>
-        // ENLACE CSV FIJO - No se puede cambiar desde la página
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcgcF0X8JnZxqIxvDv9FHdvo-QVZYm6aX6OZDCzTJ_-jHLeakn8fCQSaDAIAY-_Fk4v9rnHZYAPBxW/pub?output=csv';
 
         async function init() {
             try {
                 const urlP = CSV_URL + "&gid=0";
                 const urlPr = CSV_URL + "&gid=18329811";
-
                 const [resP, resPr] = await Promise.all([
                     fetch(urlP).then(r => r.text()),
                     fetch(urlPr).then(r => r.text())
                 ]);
-
-                if(resP.includes('<!DOCTYPE html>')) throw new Error("Bloqueo de navegador");
-
+                if(resP.includes('<!DOCTYPE html>')) throw new Error("Bloqueo");
                 process(parseCSV(resP), parseCSV(resPr));
             } catch (e) {
                 document.getElementById('loader').classList.add('hidden');
@@ -116,10 +112,9 @@
                     const pA = pr.golesa; const pB = pr.golesb;
                     const pts = calc(pA, pB, rA, rB);
                     
-                    // Sumamos puntos siempre (si el partido ya se jugó y tiene resultado)
                     s[u].p += pts; if(pts === 3) s[u].ex++; if(pts === 1) s[u].ac++;
                     
-                    // FILTRADO ESTRICTO: Solo agregamos al detalle si el partido TIENE resultado real
+                    // FILTRADO ABSOLUTO: Solo se guarda en la lista 'd' si hay resultado real
                     const tieneResultado = (rA !== "" && rA !== undefined && !isNaN(parseInt(rA)));
                     if (tieneResultado) {
                         s[u].d.push({ 
@@ -181,7 +176,6 @@
             document.getElementById('status-text').innerHTML = '<div class="flex items-center justify-center space-x-2"><div class="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div><span>TIEMPO REAL ACTIVO</span></div>';
         }
 
-        // Inicia automáticamente sin pedir nada
         init();
     </script>
 </body>
